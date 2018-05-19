@@ -9,15 +9,15 @@
 WARMING_RUNS="100 50 25 10 5 3 1 0"
 SLEEP_TIMES="30 15 5 3 1 0"
 
-echo "$(date): Started"
+echo "Time: $(date): Started"
 
 for warming in $WARMING_RUNS ; do
 
     for sleep in $SLEEP_TIMES ; do
-        echo "$(date): ./bench all 100 $warming $sleep"
-        # ./bench all 100 $warming $sleep
+        echo "Time: $(date): ./bench all 100 $warming $sleep"
+        ./bench all 100 $warming $sleep
     done
 
 done
 
-echo "$(date): Finished"
+echo "Time: $(date): Finished"
