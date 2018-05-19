@@ -1,0 +1,23 @@
+#! /bin/sh
+
+# Bench script arguments
+# $1 is the benchmark to run
+# $2 is the number of samples
+# $3 is the number of warming run
+# $4 is the number of seconds to sleep between benchmark
+
+WARMING_RUNS="100 50 25 10 5 3 1 0"
+SLEEP_TIMES="30 15 5 3 1 0"
+
+echo "$(date): Started"
+
+for warming in $WARMING_RUNS ; do
+
+    for sleep in $SLEEP_TIMES ; do
+        echo "$(date): ./bench all 100 $warming $sleep"
+        # ./bench all 100 $warming $sleep
+    done
+
+done
+
+echo "$(date): Finished"

@@ -1,0 +1,90 @@
+#! /bin/sh
+# $1 is the benchmark to run
+# $2 is the number of samples
+# $3 is the number of warming run
+# $4 is the number of seconds to sleep between benchmark
+
+LAURENT_BENCHMARKS="expt"
+GABRIEL_BENCHMARKS="browse cpstak ctak dderiv deriv destruc diviter divrec puzzle takl trav1 trav2 triangl" # boyer fft tak
+KVW_BENCHMARKS="ack array1 cat string sum1 sumloop tail wc"
+C_BENCHMARKS="fft fib fibfp mbrot nucleic pnpoly sum sumfp tak tfib $KVW_BENCHMARKS"
+OTHER_BENCHMARKS="conform dynamic earley fibc graphs lattice matrix maze mazefun nqueens paraffins peval pi primes ray scheme simplex slatex perm9 nboyer sboyer gcbench"
+ALL_BENCHMARKS="succeed fail crash $LAURENT_BENCHMARKS $GABRIEL_BENCHMARKS $C_BENCHMARKS $OTHER_BENCHMARKS"
+
+BENCHMARK_TO_RUN=$1
+SAMPLE_COUNT=${2:-5}
+WARM_RUN_COUNT=${3:-0}
+SLEEP_TIME=${4:-15}
+
+if [ -z $1 ]; then
+  echo "No benchmark selected."
+  echo "Options: "
+  echo "(All|{BENCH NAME}): Benchmarks to run"
+  echo "{SAMPLE COUNT}: Number of sample to take. Default = 5"
+  echo "{WARMING RUN COUNT}: Number of runs to execute before taking samples. Default = 0"
+  echo "{SLEEP TIME}: Time to wait between each benchmark. Default = 15s"
+  exit
+fi
+
+DATE=$(date "+%F_%R")
+# RESULT_DIR="results-$DATE-$WARM_RUN_COUNT"
+RESULT_DIR="results-$SAMPLE_COUNT-$WARM_RUN_COUNT-$SLEEP_TIME"
+
+case "$BENCHMARK_TO_RUN" in
+      all) benchmarks="$ALL_BENCHMARKS"   ;;
+        *) benchmarks="$BENCHMARK_TO_RUN" ;;
+esac
+
+mkdir $RESULT_DIR
+
+i=0
+for benchmark in $benchmarks ; do
+
+  RESULT_FILE_BASE="$RESULT_DIR/$i-$benchmark"
+  RESULT_FILE="$RESULT_FILE_BASE-samples"
+  RESULT_FILE_STATS="$RESULT_FILE_BASE-stats"
+  RESULT_FILE_ERROR="$RESULT_FILE_BASE-FAILED"
+  SCHEME_FILE="$RESULT_FILE_BASE.scm"
+  EXEC_FILE="$RESULT_FILE_BASE-exe"
+
+  TEST_IMPL_FILE="src/$benchmark.scm"
+
+  echo Testing $benchmark
+  echo Sample count: $SAMPLE_COUNT
+  echo Warming run count: $WARM_RUN_COUNT
+
+  echo Compiling
+
+  # Making scheme benchmark
+  echo "(define warm-run-count $WARM_RUN_COUNT)" > $SCHEME_FILE
+  echo "(define sample-count $SAMPLE_COUNT)" >> $SCHEME_FILE
+  cat prefix.scm >> $SCHEME_FILE
+  cat $TEST_IMPL_FILE >> $SCHEME_FILE
+  cat suffix.scm >> $SCHEME_FILE
+
+  # Compiling
+  gsc -exe -o $EXEC_FILE $SCHEME_FILE
+
+  # Executing
+  if [ -x $EXEC_FILE ]; then
+    echo Running
+    ./$EXEC_FILE > $RESULT_FILE
+
+    echo Writing results in $RESULT_FILE
+
+    cat $RESULT_FILE | gsi stats.scm > $RESULT_FILE_STATS
+
+    echo "Cooling for $SLEEP_TIME seconds"
+    sleep $SLEEP_TIME
+  else
+    echo Failed to execute test: $benchmark
+    touch $RESULT_FILE_ERROR
+
+    echo "Cooling for $(($SLEEP_TIME / 5)) seconds"
+    sleep $(($SLEEP_TIME / 5))
+  fi
+
+
+  i=$(($i + 1))
+
+done
