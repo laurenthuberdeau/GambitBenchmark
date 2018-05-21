@@ -6,15 +6,26 @@
 # $3 is the number of warming run
 # $4 is the number of seconds to sleep between benchmark
 
-WARMING_RUNS="100 50 25 10 5 3 1 0"
-SLEEP_TIMES="30 15 5 3 1 0"
+WARMING_RUNS=${1:-"100 50 25 10 5 3 1 0"}
+SLEEP_TIMES=${2:-"30 15 5 3 1 0"}
+RECORD_FREQ=${3:-"#t"}
+RECORD_TEMP=${4:-"#t"}
+
+echo "Verifying configuration"
+
+if [ $RECORD_TEMP = "#t" ]; then
+  sensors > /dev/null 2> /dev/null
+  if [ ! "$?" = "0" ]; then
+    echo "sensors command not working. Try installing lm-sensors or disable temperature recording"
+  fi
+fi
 
 echo "Time: $(date): Started"
 
 for warming in $WARMING_RUNS ; do
 
     for sleep in $SLEEP_TIMES ; do
-        echo "Time: $(date): ./bench all 100 $warming $sleep"
+        echo "Time: $(date): ./bench all 100 $warming $sleep $RECORD_FREQ $RECORD_TEMP"
         ./bench all 100 $warming $sleep
     done
 

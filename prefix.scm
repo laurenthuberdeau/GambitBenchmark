@@ -2,6 +2,8 @@
 ;; The following 2 variables are defined
 ;; sample-count: Number of time to execute and record bench
 ;; warm-run-count: Number of time to execute bench before recording time
+;; record-temp: Number of time to execute bench before recording time
+;; record-freq: Number of time to execute bench before recording time
 
 (define (run-benchmark name count ok? run-maker . args)
   (let* ((run (apply run-maker args)))
@@ -42,10 +44,14 @@
       #f)))
 
 (define (get-cpu-temps)
-  (execute-shell-command "sensors | grep Core | awk '{print $3}' | tr -d '+°C' | tr '\n' ','"))
+  (if record-temp
+    (execute-shell-command "sensors | grep Core | awk '{print $3}' | tr -d '+°C' | tr '\n' ','")
+    "0"))
 
 (define (get-cpu-freqs)
-  (execute-shell-command "cat /proc/cpuinfo | grep '^cpu MHz' | awk '{print $4}' | tr '\n' ','"))
+  (if record-freq
+    (execute-shell-command "cat /proc/cpuinfo | grep '^cpu MHz' | awk '{print $4}' | tr '\n' ','")
+    "0"))
 
 (define (fatal-error . args)
   (for-each display args)

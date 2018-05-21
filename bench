@@ -15,6 +15,8 @@ BENCHMARK_TO_RUN=$1
 SAMPLE_COUNT=${2:-5}
 WARM_RUN_COUNT=${3:-0}
 SLEEP_TIME=${4:-15}
+RECORD_FREQUENCY=${5:-"#t"}
+RECORD_TEMPERATURE=${6:-"#t"}
 
 if [ -z $1 ]; then
   echo "No benchmark selected."
@@ -58,6 +60,8 @@ for benchmark in $benchmarks ; do
   # Making scheme benchmark
   echo "(define warm-run-count $WARM_RUN_COUNT)" > $SCHEME_FILE
   echo "(define sample-count $SAMPLE_COUNT)" >> $SCHEME_FILE
+  echo "(define record-temp $RECORD_TEMPERATURE)" >> $SCHEME_FILE
+  echo "(define record-freq $RECORD_FREQUENCY)" >> $SCHEME_FILE
   cat prefix.scm >> $SCHEME_FILE
   cat $TEST_IMPL_FILE >> $SCHEME_FILE
   cat suffix.scm >> $SCHEME_FILE
