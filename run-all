@@ -19,7 +19,7 @@ echo "Config:"
 echo "Benchmarks: $BENCHMARKS"
 echo "Sample counts: $SAMPLE_COUNT"
 echo "Warming runs: $WARMING_RUNS"
-echo "Sleep time: $SLEEP_TIME"
+echo "Sleep time: $SLEEP_TIMES"
 echo "Record CPU frequency?: $RECORD_FREQ"
 echo "Record CPU temperature?: $RECORD_TEMP"
 
