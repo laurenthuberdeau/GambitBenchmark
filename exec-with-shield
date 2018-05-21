@@ -1,0 +1,15 @@
+cpus=$1
+shift
+
+cset shield --cpu $cpus
+cset shield --kthread on
+
+cset shield --shield -v
+
+command=$1
+shift
+args=$@
+
+cset shield --exec $command -- $args
+
+cset shield --reset
