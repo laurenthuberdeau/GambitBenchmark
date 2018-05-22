@@ -1,74 +1,3 @@
-;;;----------------------------------------------------------------------------
-
-(define (stats vals)
-  (let* ((nb-bins 20)
-         (nb-vals (length vals))
-         (min-val (apply min vals))
-         (max-val (apply max vals))
-         (mean (/ (apply + vals) nb-vals))
-         (sd (sqrt (/ (apply + (map (lambda (v) (let ((d (- v mean))) (* d d))) vals)) nb-vals)))
-         (diff (- max-val min-val))
-         (step (/ diff (- nb-bins 1)))
-         (start (- min-val (* 0.5 step)))
-         (v (make-vector nb-bins '())))
-
-    (define decimals 6)
-
-    (define (num->string num w d)      ; w = total width, d = decimals
-      (let ((n (floor (inexact->exact (round (* (abs num) (expt 10 d)))))))
-        (let ((i (quotient n (expt 10 d)))
-              (f (modulo n (expt 10 d))))
-          (let ((si (string-append
-                     (if (< num 0) "-" "")
-                     (if (and (= i 0) (> d 0)) "" (number->string i 10))))
-                (sf (number->string (+ f (expt 10 d)) 10)))
-            (if (> d 0)
-                (string-set! sf 0 #\.)
-                (set! sf ""))
-            (let ((lsi (string-length si))
-                  (lsf (string-length sf)))
-              (let ((blanks (- w (+ lsi lsf))))
-                (string-append (make-string (max blanks 0) #\space) si sf)))))))
-
-    (let ((index 0))
-      (for-each
-       (lambda (val)
-         (let ((bin (inexact->exact (floor (/ (- val start) step)))))
-           (vector-set! v bin (cons index (vector-ref v bin)))
-           (set! index (+ index 1))))
-       vals))
-
-    (let loop ((x min-val) (i 0))
-      (if (< i nb-bins)
-          (begin
-            (display
-             (string-append
-              (num->string x (+ decimals 3) decimals)
-              " ("
-              (num->string (* 100 (/ x mean)) 6 2)
-              "%):"
-              (num->string (* 100 (/ (length (vector-ref v i)) nb-vals)) 3 0)
-              "% "
-              (list->string
-               (map (lambda (index)
-                      (integer->char (+ (char->integer #\A)
-                                        (inexact->exact (floor (/ (* index 26) nb-vals))))))
-                    (reverse (vector-ref v i))))
-              (if (and (>  mean (+ x (* -0.5 step)))
-                       (<= mean (+ x (* +0.5 step))))
-                  (string-append "      <--- mean="
-                                 (num->string mean 0 decimals))
-                  "")
-              "\n"))
-            (loop (+ x step) (+ i 1)))))
-
-    (display
-     (string-append
-      (num->string sd (+ decimals 3) decimals)
-      " ("
-      (num->string (* 100 (/ sd mean)) 6 4)
-      "%) standard deviation\n"))))
-
 ;; List and String utils
 
 (define (list-split lst pred)
@@ -174,10 +103,114 @@
 (define (delta-temp  lst) (abs (- (max-temp-before lst) (max-temp-after lst))))
 (define (delta-freq  lst) (abs (- (max-freq-before lst) (max-freq-after lst))))
 
+;;;----------------------------------------------------------------------------
+
+(define (num->string num w d)      ; w = total width, d = decimals
+  (let ((n (floor (inexact->exact (round (* (abs num) (expt 10 d)))))))
+    (let ((i (quotient n (expt 10 d)))
+          (f (modulo n (expt 10 d))))
+      (let ((si (string-append
+                 (if (< num 0) "-" "")
+                 (if (and (= i 0) (> d 0)) "" (number->string i 10))))
+            (sf (number->string (+ f (expt 10 d)) 10)))
+        (if (> d 0)
+            (string-set! sf 0 #\.)
+            (set! sf ""))
+        (let ((lsi (string-length si))
+              (lsf (string-length sf)))
+          (let ((blanks (- w (+ lsi lsf))))
+            (string-append (make-string (max blanks 0) #\space) si sf)))))))
+
+(define (show-histogram vals #!optional (nb-bins 20))
+  (let* ((nb-vals (length vals))
+         (min-val (apply min vals))
+         (max-val (apply max vals))
+         (mean (/ (apply + vals) nb-vals))
+         (sd (sqrt (/ (apply + (map (lambda (v) (let ((d (- v mean))) (* d d))) vals)) nb-vals)))
+         (diff (- max-val min-val))
+         (step (/ diff (- nb-bins 1)))
+         (start (- min-val (* 0.5 step)))
+         (v (make-vector nb-bins '()))
+         (decimals 6))
+
+    (let ((index 0))
+      (for-each
+       (lambda (val)
+         (let ((bin (inexact->exact (floor (/ (- val start) step)))))
+           (vector-set! v bin (cons index (vector-ref v bin)))
+           (set! index (+ index 1))))
+       vals))
+
+    (let loop ((x min-val) (i 0))
+      (if (< i nb-bins)
+          (begin
+            (display
+             (string-append
+              (num->string x (+ decimals 3) decimals)
+              " ("
+              (num->string (* 100 (/ x mean)) 6 2)
+              "%):"
+              (num->string (* 100 (/ (length (vector-ref v i)) nb-vals)) 3 0)
+              "% "
+              (list->string
+               (map (lambda (index)
+                      (integer->char (+ (char->integer #\A)
+                                        (inexact->exact (floor (/ (* index 26) nb-vals))))))
+                    (reverse (vector-ref v i))))
+              (if (and (>  mean (+ x (* -0.5 step)))
+                       (<= mean (+ x (* +0.5 step))))
+                  (string-append "      <--- mean="
+                                 (num->string mean 0 decimals))
+                  "")
+              "\n"))
+            (loop (+ x step) (+ i 1)))))
+
+    (display
+     (string-append
+      (num->string sd (+ decimals 3) decimals)
+      " ("
+      (num->string (* 100 (/ sd mean)) 6 4)
+      "%) standard deviation\n"))))
+
+(define (histogram-map results fun name)
+  (display name)
+  (display "\n")
+  (display (show-histogram (map fun results)))
+  (display "\n"))
+
+(define (show-time-histogram results)
+  (histogram-map results sample-time "Time histogram:"))
+
+(define (show-temp-histogram results)
+  (histogram-map results max-temp-before "Temperature histogram:"))
+
+(define (show-delta-temp-histogram results)
+  (histogram-map results delta-temp "Delta temperature histogram:"))
+
+(define (show-freq-histogram results)
+  (histogram-map results max-freq-before "Frequency histogram:"))
+
+(define (show-delta-freq-histogram results)
+  (histogram-map results delta-freq "Delta frequency histogram:"))
+
+(define (show-max-delta-temp results)
+  (display "Max delta temp: ")
+  (display (apply max (map delta-temp results)))
+  (display "\n"))
+
+(define (show-max-delta-freq results)
+  (display "Max delta freq: ")
+  (display (apply max (map delta-freq results)))
+  (display "\n"))
+
 ;; Entry point
 
 (define (main args)
   (let ((results (read-csv)))
-    (stats (map sample-time results))))
+    (show-time-histogram results)
+    (show-delta-temp-histogram results)
+    (show-delta-freq-histogram results)
+    (show-max-delta-temp results)
+    (show-max-delta-freq results)))
 
 (main (cdr (command-line)))
