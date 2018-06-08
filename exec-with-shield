@@ -1,3 +1,5 @@
+#! /bin/sh
+
 cpus=$1
 shift
 
